@@ -210,16 +210,16 @@ class Printer:
 
         # File to string
         with open(printer_profile_header_path, "r") as f:
-            header = f.read()
+            self.header = f.read()
         with open(printer_profile_footer_path, "r") as f:
-            footer = f.read()
+            self.footer = f.read()
 
         # Put user defined parameters in the header
-        header = header.replace("<HBPTEMP>", str(int(self.bed_temp)))
-        header = header.replace("<TOOLTEMP>", str(int(self.extruder_temp)))
+        self.header = self.header.replace("<HBPTEMP>", str(int(self.bed_temp)))
+        self.header = self.header.replace("<TOOLTEMP>", str(int(self.extruder_temp)))
         # G29 ; auto bed levelling\nG0 F6200 X0 Y0 ; back to the origin to begin the purge
-        header = header.replace("<BEDLVL>", "G0 F6200 X0 Y0")
-        header = header.replace("<NOZZLE_DIAMETER>", str(self.nozzle_width))
+        self.header = self.header.replace("<BEDLVL>", "G0 F6200 X0 Y0")
+        self.header = self.header.replace("<NOZZLE_DIAMETER>", str(self.nozzle_width))
 
     # add rectangle around object
     def rectangle(self, trajectories):
