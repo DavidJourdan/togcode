@@ -99,6 +99,14 @@ class Printer:
         trajectories = self.duplicate(trajectories)
         trajectories = self.rectangle(trajectories) + trajectories
 
+        # for Bambulabs printers
+        dimensions = Printer.bounding_box(trajectories)
+        maxX = self.origin[0] + dimensions[0] / 2
+        maxY = self.origin[1] + dimensions[1] / 2
+        minX = self.origin[0] - dimensions[0] / 2
+        minY = self.origin[1] - dimensions[1] / 2
+        self.header = self.header.replace("G29 A X0 Y0 I256 J256", "G29 A X{minX} Y{minY} I{maxX} J{maxY}")
+
         self.write_gcode(trajectories, filename)
 
         self.print_estimations()
