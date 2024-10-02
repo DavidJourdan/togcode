@@ -69,7 +69,7 @@ class Printer:
         # gcode templates
         self.header = ""
         self.footer = ""
-        self.load_gcode_templates(printer_profile)
+        self.printer_profile = printer_profile
 
     def get_print_feedrate(self) -> int:
         # mm/s to mm/min
@@ -95,6 +95,7 @@ class Printer:
         self.total_extrusion_length += self.compute_extrusion_length(local_length)
 
     def to_gcode(self, trajectories, filename="output.gcode"):
+        self.load_gcode_templates(self.printer_profile)
         trajectories = Printer.center_trajectories(trajectories)
         trajectories = self.duplicate(trajectories)
         trajectories = self.rectangle(trajectories) + trajectories
