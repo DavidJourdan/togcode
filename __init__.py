@@ -106,7 +106,7 @@ class Printer:
         maxY = self.origin[1] + dimensions[1] / 2
         minX = self.origin[0] - dimensions[0] / 2
         minY = self.origin[1] - dimensions[1] / 2
-        self.header = self.header.replace("G29 A X0 Y0 I256 J256", "G29 A X{minX} Y{minY} I{maxX} J{maxY}")
+        self.header = self.header.replace("G29 A X0 Y0 I256 J256", f"G29 A X{minX} Y{minY} I{maxX} J{maxY}")
 
         self.write_gcode(trajectories, filename)
 
@@ -265,8 +265,8 @@ class Printer:
         return self.flow_multiplier * v_mm3 / crsec
 
     def center_trajectories(trajectories):
-        minPoint = np.array([0.0, 0.0, 0.0])
-        maxPoint = np.array([0.0, 0.0, 0.0])
+        minPoint = np.array([np.inf, np.inf, np.inf])
+        maxPoint = np.array([-np.inf, -np.inf, -np.inf])
         count = 0
         for trajectory in trajectories:
             minPoint = np.min(np.vstack((minPoint, np.min(trajectory, axis=0))), axis=0)
