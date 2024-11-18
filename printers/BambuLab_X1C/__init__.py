@@ -73,3 +73,5 @@ x_max_jerk = 8.00 # mm/s
 y_max_jerk = 8.00 # mm/s
 z_max_jerk = 0.40 # mm/s
 e_max_jerk = 1.50 # mm/s
+
+relative_coordinates = True

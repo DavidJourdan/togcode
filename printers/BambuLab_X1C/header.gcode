@@ -656,4 +656,4 @@ G0 Y252.5 E6.4
 G0 X128 E6.4
 G90
 G21
-M82 ; extrusion is in relative coordinates
+M83 ; extrusion is in relative coordinates

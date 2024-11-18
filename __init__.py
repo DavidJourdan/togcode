@@ -36,6 +36,10 @@ class Printer:
             self.filament_density = submodule.filament_density
         else:
             self.filament_density = 1.25
+        if hasattr(submodule, 'relative_coordinates'):
+            self.relative_coordinates = submodule.relative_coordinates
+        else:
+            self.relative_coordinates = False
         self.print_speed = 30
         self.first_layer_speed = 15
         self.flow_multiplier = 1
@@ -95,6 +99,7 @@ class Printer:
         self.total_extrusion_length += self.compute_extrusion_length(local_length)
 
     def to_gcode(self, trajectories, filename="output.gcode"):
+        self.total_extrusion_length = 0
         self.load_gcode_templates(self.printer_profile)
         trajectories = Printer.center_trajectories(trajectories)
         trajectories = self.duplicate(trajectories)
@@ -139,13 +144,23 @@ class Printer:
                     self.update_extrusion_length(dist)
 
                     if point[2] <= self.layer_height:
-                        f.write(
-                            f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
-                        )
+                        if self.relative_coordinates:
+                            f.write(
+                                f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                            )
+                        else:
+                            f.write(
+                                f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                            )
                     else:
-                        f.write(
-                            f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
-                        )
+                        if self.relative_coordinates:
+                            f.write(
+                                f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                            )
+                        else:
+                            f.write(
+                                f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                            )
                     prev_point = point
 
             # Write footer
@@ -168,7 +183,10 @@ class Printer:
             # Retract
             travel_str += ";retract\n"
             self.total_extrusion_length -= self.filament_priming
-            travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
+            if self.relative_coordinates:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{-self.filament_priming:.2f}\n"
+            else:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
             # Travel
             travel_str += ";travel\n"
             travel_str += f"G0 F{self.get_z_lift_feedrate()} X{intermediate1[0]:.3f} Y{intermediate1[1]:.3f} Z{point_z_lifted:.2f}\n"
@@ -177,16 +195,20 @@ class Printer:
             # Prime
             travel_str += ";prime\n"
             self.total_extrusion_length += self.filament_priming
-            travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
+            if self.relative_coordinates:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.filament_priming:.2f}\n"
+            else:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
         return travel_str
 
     def travel_to(self, point_end: np.ndarray) -> str:
         # Retract
         travel_str = ";retract\n"
         self.total_extrusion_length -= self.filament_priming
-        travel_str += (
-            f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
-        )
+        if self.relative_coordinates:
+            travel_str += f"G1 F{self.get_retract_feedrate()} E{-self.filament_priming:.2f}\n"
+        else:
+            travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
         # Travel
         travel_str += ";travel\n"
         travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2] + self.z_lift:.2f}\n"
@@ -195,9 +217,10 @@ class Printer:
         # Prime
         travel_str += ";prime\n"
         self.total_extrusion_length += self.filament_priming
-        travel_str += (
-            f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
-        )
+        if self.relative_coordinates:
+            travel_str += f"G1 F{self.get_retract_feedrate()} E{self.filament_priming:.2f}\n"
+        else:
+            travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
         return travel_str
 
     def print_estimations(self):
