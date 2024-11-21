@@ -171,8 +171,7 @@ class Printer:
 
         travel_str = ""
         if dist < self.travel_max_length_without_retract:
-            travel_str += ";travel\n"
-            travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.2f}\n"
+            travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.2f} ;travel\n"
         else:
             point_z_lifted = max(point_end[2], point_start[2]) + self.z_lift
 

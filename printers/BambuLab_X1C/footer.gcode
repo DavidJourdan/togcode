@@ -1,9 +1,24 @@
+; stop printing object
+M73 P100 R0
+; close powerlost recovery
+M1003 S0
+; WIPE_START
+G1 F1800
+G1 X93.51 Y105.364 E-.8
+; WIPE_END
+; stop printing object, unique label id: 75
+M625
+M106 S0
+M106 P2 S0
+M981 S0 P20000 ; close spaghetti detector
+; FEATURE: Custom
+; filament end gcode 
+M106 P3 S0
 ;===== date: 20240528 =====================
 M400 ; wait for buffer to clear
 G92 E0 ; zero the extruder
 G1 E-0.8 F1800 ; retract
-G1 Z{48 + 0.5} F900 ; lower z a little
-G1 X65 Y245 F12000 ; move to safe pos
+G1 X65 Y245 Z200 F12000 ; move to safe pos
 G1 Y265 F3000
 
 G1 X65 Y245 F12000
@@ -26,18 +41,10 @@ M621 S255
 M104 S0 ; turn off hotend
 
 M622.1 S1 ; for prev firware, default turned on
-M1002 judge_flag timelapse_record_flag
-M622 J1
-    M400 ; wait all motion done
-    M991 S0 P-1 ;end smooth timelapse at safe pos
-    M400 S3 ;wait for last picture to be taken
-M623; end of "timelapse_record_flag"
 
 M400 ; wait all motion done
 M17 S
 M17 Z0.4 ; lower z motor current to reduce impact if there is something in the bottom
-    G1 Z148 F600
-    G1 Z146
 M400 P100
 M17 R ; restore z current
 
@@ -70,3 +77,4 @@ M1006 W
 
 M17 X0.8 Y0.8 Z0.5 ; lower motor current to 45% power
 M960 S5 P0 ; turn off logo lamp
+; EXECUTABLE_BLOCK_END
