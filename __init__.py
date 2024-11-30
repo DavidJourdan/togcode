@@ -100,6 +100,8 @@ class Printer:
 
     def to_gcode(self, trajectories, filename="output.gcode"):
         self.total_extrusion_length = 0
+        self.total_print_dist = 0
+        self.total_travel_dist = 0
         self.load_gcode_templates(self.printer_profile)
         trajectories = Printer.center_trajectories(trajectories)
         trajectories = self.duplicate(trajectories)
@@ -137,7 +139,7 @@ class Printer:
                         self.layer_height = trajectory[0, 2] - prev_point[2]
                 prev_point = trajectory[0, :] + center
 
-                for point in trajectory:
+                for point in trajectory[1:]:
                     point += center
                     dist = np.linalg.norm(point - prev_point)
                     self.total_print_dist += dist
@@ -171,7 +173,7 @@ class Printer:
 
         travel_str = ""
         if dist < self.travel_max_length_without_retract:
-            travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.2f} ;travel\n"
+            travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.4f} ;travel\n"
         else:
             point_z_lifted = max(point_end[2], point_start[2]) + self.z_lift
 
@@ -190,7 +192,7 @@ class Printer:
             travel_str += ";travel\n"
             travel_str += f"G0 F{self.get_z_lift_feedrate()} X{intermediate1[0]:.3f} Y{intermediate1[1]:.3f} Z{point_z_lifted:.2f}\n"
             travel_str += f"G0 F{self.get_travel_feedrate()} X{intermediate2[0]:.3f} Y{intermediate2[1]:.3f} Z{point_z_lifted:.2f}\n"
-            travel_str += f"G0 F{self.get_z_lift_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.2f}\n"
+            travel_str += f"G0 F{self.get_z_lift_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.4f}\n"
             # Prime
             travel_str += ";prime\n"
             self.total_extrusion_length += self.filament_priming
@@ -211,7 +213,7 @@ class Printer:
         # Travel
         travel_str += ";travel\n"
         travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2] + self.z_lift:.2f}\n"
-        travel_str += f"G0 F{self.get_z_lift_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.2f}\n"
+        travel_str += f"G0 F{self.get_z_lift_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.4f}\n"
 
         # Prime
         travel_str += ";prime\n"
