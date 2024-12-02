@@ -58,11 +58,6 @@ M1002 gcode_claim_action : 2
 M140 S<HBPTEMP> ;set bed temp
 M190 S<HBPTEMP> ;wait for bed temp
 
-; {if scan_first_layer}
-;=========register first layer scan=====
-M977 S1 P60
-; {endif}
-
 ;=============turn on fans to prevent PLA jamming=================
     M106 P3 S180
     M142 P1 R35 S40
@@ -209,7 +204,7 @@ G1 Z10
 G1 F30000
 G1 X128 Y128
 G29.2 S1 ; turn on ABL
-;G28 ; home again after hard wipe mouth
+G28 ; home again after hard wipe mouth
 M106 S0 ; turn off fan , too noisy
 ;===== wipe nozzle end ================================
 
@@ -220,12 +215,13 @@ M972 S5 P0
 G1 X230 Y15 F24000
 ;===== check scanner clarity end =======================
 
+: uncomment line below to disable auto bed leveling
+;M1002 set_flag g29_before_print_flag=0
 ;===== bed leveling ==================================
 M1002 judge_flag g29_before_print_flag
 M622 J1
 
     M1002 gcode_claim_action : 1
-    ; TODO pass variables for objects bounding box below
     G29 A X0 Y0 I256 J256
     M400
     M500 ; save cali data
@@ -269,13 +265,6 @@ G1 X230 Y15
 G28 X ; re-home XY
 ;===== mech mode fast check============================
 
-; {if scan_first_layer}
-;start heatbed  scan====================================
-M976 S2 P1
-G90
-G1 X128 Y128 F20000
-M976 S3 P2  ;register void printing detection
-; {endif}
 
 ;===== nozzle load line ===============================
 M975 S1
@@ -643,18 +632,9 @@ M106 P2 S0 ; turn off big fan
 M106 P3 S0 ; turn off chamber fan
 
 M975 S1 ; turn on mech mode supression
-G90
-M83
-T1000
-G1 E-0.8 F1800
-G1 X128.0 Y253.0 Z0.2 F24000.0;Move to start position
-G1 E0.8 F1800
-M109 S<TOOLTEMP>
-G0 X253 E6.4 F754
-G0 Y128 E6.4
-G0 X252.5
-G0 Y252.5 E6.4
-G0 X128 E6.4
-G90
-G21
+G90 : absolute positioning
 M83 ; extrusion is in relative coordinates
+G21 : metric coordinates
+T1000
+
+; filament start gcode

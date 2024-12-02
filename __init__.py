@@ -113,7 +113,7 @@ class Printer:
         maxY = self.origin[1] + dimensions[1] / 2
         minX = self.origin[0] - dimensions[0] / 2
         minY = self.origin[1] - dimensions[1] / 2
-        self.header = self.header.replace("G29 A X0 Y0 I256 J256", f"G29 A X{minX} Y{minY} I{maxX} J{maxY}")
+        self.header = self.header.replace("G29 A X0 Y0 I256 J256", f"G29 A X{minX:.1f} Y{minY:.1f} I{maxX - minX:.1f} J{maxY - minY:.1f}")
 
         self.write_gcode(trajectories, filename)
 
