@@ -98,24 +98,58 @@ class Printer:
     def update_extrusion_length(self, local_length: float):
         self.total_extrusion_length += self.compute_extrusion_length(local_length)
 
-    def to_gcode(self, trajectories, filename="output.gcode"):
+    def to_gcode(self, trajectories, filename="output.gcode", variable_layer_height=False):
         self.total_extrusion_length = 0
         self.total_print_dist = 0
         self.total_travel_dist = 0
-        self.load_gcode_templates(self.printer_profile)
-        trajectories = Printer.center_trajectories(trajectories)
-        trajectories = self.duplicate(trajectories)
-        trajectories = self.rectangle(trajectories) + trajectories
+        self.load_gcode_templates(self.printer_profile)        
+
+        # find bounding box coordinates
+        if variable_layer_height:
+            minPoint = np.array([np.inf, np.inf])
+            maxPoint = np.array([-np.inf, -np.inf])
+            for layer in trajectories:
+                a, b = Printer.bounding_box(layer["paths"])
+                minPoint = np.min((minPoint, a), axis=0)
+                maxPoint = np.max((maxPoint, b), axis=0)
+        else:
+            minPoint, maxPoint = Printer.bounding_box(trajectories)
+
+        # center print
+        center = (minPoint + maxPoint) / 2
+        if variable_layer_height:
+            for layer in trajectories:
+                for path in layer["paths"]:
+                    path[:, :2] -= center
+        else:
+            for trajectory in trajectories:
+                trajectory[:, :2] -= center
+
+        # duplicate
+        if variable_layer_height:
+            for layer in trajectories:
+                layer["paths"] = self.duplicate(layer["paths"])
+        else:
+            trajectories = self.duplicate(trajectories)
+
+        # rectangle
+        diagonal = maxPoint - minPoint # bounding box diagonal
+        if variable_layer_height:
+            trajectories = [{"height": 0.08, "paths": self.rectangle(diagonal)}] + trajectories
+        else:
+            trajectories = self.rectangle(diagonal) + trajectories
 
         # for Bambulabs printers
-        dimensions = Printer.bounding_box(trajectories)
-        maxX = self.origin[0] + dimensions[0] / 2
-        maxY = self.origin[1] + dimensions[1] / 2
-        minX = self.origin[0] - dimensions[0] / 2
-        minY = self.origin[1] - dimensions[1] / 2
+        maxX = self.origin[0] + diagonal[0] / 2
+        maxY = self.origin[1] + diagonal[1] / 2
+        minX = self.origin[0] - diagonal[0] / 2
+        minY = self.origin[1] - diagonal[1] / 2
         self.header = self.header.replace("G29 A X0 Y0 I256 J256", f"G29 A X{minX:.1f} Y{minY:.1f} I{maxX - minX:.1f} J{maxY - minY:.1f}")
 
-        self.write_gcode(trajectories, filename)
+        if variable_layer_height:
+            self.write_gcode_new(trajectories, filename)
+        else:
+            self.write_gcode(trajectories, filename)
 
         self.print_estimations()
 
@@ -164,6 +198,56 @@ class Printer:
                                 f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
                             )
                     prev_point = point
+
+            # Write footer
+            f.write(self.footer)
+
+    def write_gcode_new(self, layers, filename="output.gcode"):
+        with open(filename, "w", encoding="utf-8") as f:
+            # Write header
+            f.write(self.header)
+
+            center = np.array([self.origin[0], self.origin[1], 0])
+            prev_point = None
+            for id, layer in enumerate(layers):
+                f.write(f"; CHANGE_LAYER\n; LAYER_HEIGHT: {layer["height"]:.4f}\n; Layer number: {id + 1}\n")
+                f.write(f"M73 L{id + 1}\n")
+                self.layer_height = layer["height"]
+                for trajectory in layer["paths"]:
+                    if prev_point is None:
+                        f.write(self.travel_to(trajectory[0, :] + center))
+                    else:
+                        f.write(self.travel(prev_point, trajectory[0, :] + center))
+                        dist = np.linalg.norm(trajectory[0, :] + center - prev_point)
+                        self.total_travel_dist += dist
+                    prev_point = trajectory[0, :] + center
+
+                    for point in trajectory[1:]:
+                        point += center
+                        dist = np.linalg.norm(point - prev_point)
+                        self.total_print_dist += dist
+                        self.update_extrusion_length(dist)
+
+                        if point[2] <= self.layer_height:
+                            if self.relative_coordinates:
+                                f.write(
+                                    f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                )
+                            else:
+                                f.write(
+                                    f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                )
+                        else:
+                            if self.relative_coordinates:
+                                f.write(
+                                    f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                )
+                            else:
+                                f.write(
+                                    f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                )
+                        prev_point = point
+
 
             # Write footer
             f.write(self.footer)
@@ -255,15 +339,9 @@ class Printer:
         self.header = self.header.replace("<NOZZLE_DIAMETER>", str(self.nozzle_width))
 
     # add rectangle around object
-    def rectangle(self, trajectories):
-        dimensions_plus_margin = (
-            Printer.bounding_box(trajectories)
-            + self.rectangle_distance
-            + 2 * self.nloops * self.nozzle_width
-        )
-
+    def rectangle(self, diagonal):
         rect_trajectories = []
-
+        dimensions_plus_margin = diagonal + self.rectangle_distance + 2 * self.nloops * self.nozzle_width
         for i in range(self.nloops):
             rect_trajectory = []
             X = dimensions_plus_margin[0] / 2 - self.nozzle_width * i
@@ -288,37 +366,21 @@ class Printer:
         v_mm3 = local_length * self.layer_height * self.nozzle_width
         return self.flow_multiplier * v_mm3 / crsec
 
-    def center_trajectories(trajectories):
+    def bounding_box(trajectories):
         minPoint = np.array([np.inf, np.inf, np.inf])
         maxPoint = np.array([-np.inf, -np.inf, -np.inf])
-        count = 0
         for trajectory in trajectories:
             minPoint = np.min(np.vstack((minPoint, np.min(trajectory, axis=0))), axis=0)
             maxPoint = np.max(np.vstack((maxPoint, np.max(trajectory, axis=0))), axis=0)
-        print(minPoint, maxPoint)
-        avg = (minPoint + maxPoint) / 2
-        avg[2] = 0
-        print(avg)
 
-        for trajectory in trajectories:
-            trajectory -= avg
-
-        return trajectories
-
-    def bounding_box(trajectories):
-        object_max_xy = np.array([0, 0, 0])
-        object_min_xy = np.array([0, 0, 0])
-        for trajectory in trajectories:
-            object_max_xy = np.maximum(np.amax(trajectory, axis=0), object_max_xy)
-            object_min_xy = np.minimum(np.amin(trajectory, axis=0), object_min_xy)
-
-        return object_max_xy[:2] - object_min_xy[:2]
+        return minPoint[:2], maxPoint[:2]
 
     def duplicate(self, input_traj):
         if self.nrows * self.ncols <= 1:
             return input_traj
 
-        dimensions_plus_margin = Printer.bounding_box(input_traj) + 5
+        minPoint, maxPoint = Printer.bounding_box(input_traj)
+        dimensions_plus_margin = maxPoint - minPoint + 5
 
         trajectories = []
         for i in range(self.ncols):
