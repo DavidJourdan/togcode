@@ -38,7 +38,7 @@ M104 S75 ;set extruder temp to turn on the HB fan and prevent filament oozing fr
 M290 X40 Y40 Z2.6666666
 G91
 M17 Z0.4 ; lower the z-motor current
-G380 S2 Z30 F300 ; G380 is same as G38; lower the hotbed , to prevent the nozzle is below the hotbed
+G380 S2 Z30 F300 ; G380 is same as G38; lower the hotbed to prevent the nozzle being too close
 G380 S2 Z-25 F300 ;
 G1 Z5 F300;
 G90
@@ -49,7 +49,7 @@ M220 S100 ;Reset Feedrate
 M221 S100 ;Reset Flowrate
 M73.2   R1.0 ;Reset left time magnitude
 M1002 set_gcode_claim_speed_level : 5
-M221 X0 Y0 Z0 ; turn off soft endstop to prevent protential logic problem
+M221 X0 Y0 Z0 ; turn off soft endstop to prevent potential logic problem
 G29.1 Z0 ; Set z-offset (Smooth PEI = 0, textured PEI = -0.04)
 M204 S10000 ; init ACC set to 10m/s^2
 
@@ -74,7 +74,7 @@ G1 X60 F12000
 G1 Y245
 G1 Y265 F3000
 M620 M
-M620 S0A   ; switch material if AMS exist
+M620 S0A   ; switch material if AMS exists
     M109 S<TOOLTEMP>
     G1 X120 F12000
 
@@ -89,33 +89,38 @@ M620.1 E F299.339 T240
 
 M412 S1 ; ===turn on filament runout detection===
 
-M109 S250 ;set nozzle to common flush temp
-M106 P1 S0
-G92 E0
-G1 E50 F200
-M400
-M104 S<TOOLTEMP>
-G92 E0
-G1 E50 F200
-M400
-M106 P1 S255
-G92 E0
-G1 E5 F300
-M109 S170 ; drop nozzle temp, make filament shink a bit
-G92 E0
-G1 E-0.5 F300
+;===== nozzle flush/poop routine
+;M109 S250           ;set nozzle to common flush temp
+;M106 P1 S0          ;set Fan Speed
+;G92 E0              ;set extruder position
 
-G1 X70 F9000
-G1 X76 F15000
-G1 X65 F15000
-G1 X76 F15000
-G1 X65 F15000; shake to put down garbage
-G1 X80 F6000
-G1 X95 F15000
-G1 X80 F15000
-G1 X165 F15000; wipe and shake
-M400
-M106 P1 S0
+;===== *** filament poop (standard E50) ==========
+;G1 E50 F200          ;move extruder
+;M400                ;finish moves
+;M104 S[nozzle_temperature_initial_layer] ;set hotend temperature
+;G92 E0              ;set extruder position
+;===== *** filament poop (standard E50) ==========
+;G1 E50 F200          ;move extruder
+;M400                ;finish moves
+;M106 P1 S255        ;set Fan Speed
+;G92 E0              ;set extruder position
+;G1 E5 F300          ;move extruder
+;M109 S{nozzle_temperature_initial_layer[initial_extruder]-20} ; drop nozzle temp, make filament shrink a bit
+;G92 E0              ;set extruder position
+;G1 E-0.5 F300       ;move extruder
+
+;===== vibrate/shake toolhead
+;G1 X70 F9000
+;G1 X76 F15000
+;G1 X65 F15000
+;G1 X76 F15000
+;G1 X65 F15000      ; shake to put down garbage
+;G1 X80 F6000
+;G1 X95 F15000
+;G1 X80 F15000
+;G1 X165 F15000; wipe and shake
+;M400               ;finish moves
+;M106 P1 S0         ;set Fan Speed
 ;===== prepare print temperature and material end =====
 
 

@@ -210,23 +210,11 @@ class Printer:
             center = np.array([self.origin[0], self.origin[1], 0])
             prev_point = None
             for id, layer in enumerate(layers):
-                f.write(f"; CHANGE_LAYER\n; LAYER_HEIGHT: {layer["height"]:.4f}\n; Layer number: {id}\n")
-                f.write(f"M73 L{id}\n")
-                f"""
-                ; CHANGE_LAYER
-                ; LAYER_HEIGHT: {layer["height"]:.4f}
-                G1 E-.8 F1800
-                ; layer num/total_layer_count: {id}/{len(layers) - 1}
-                M622.1 S1 ; for prev firware, default turned on
-                M622 J1
-                ; timelapse without wipe tower
-                M971 S11 C10 O0
-
-                M623
-                ; update layer progress
-                M73 L{id}
-                M991 S0 P0 ;notify layer change
-                """
+                f.write(f"""
+; CHANGE_LAYER: {id}/{len(layers) - 1}
+; LAYER_HEIGHT: {layer["height"]:.4f}
+M73 L{id} ; update layer progress
+""")
                 self.layer_height = layer["height"]
                 for trajectory in layer["paths"]:
                     if prev_point is None:
