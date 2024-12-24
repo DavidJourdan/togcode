@@ -45,11 +45,11 @@ class Printer:
         self.flow_multiplier = 1
         self.bed_temp = 55
         self.extruder_temp = 190
-        self.layer_height = 0.08
+        self.layer_height = 0.1
         self.origin_is_bed_center = False
         self.nrows = 1
         self.ncols = 1
-        self.nloops = 5
+        self.nloops = 3
         self.rectangle_distance = 3
 
         # constants
