@@ -174,30 +174,30 @@ class Printer:
                 prev_point = trajectory[0, :] + center
 
                 for point in trajectory[1:]:
-                    point += center
-                    dist = np.linalg.norm(point - prev_point)
+                    curr_point = point + center
+                    dist = np.linalg.norm(curr_point - prev_point)
                     self.total_print_dist += dist
                     self.update_extrusion_length(dist)
 
-                    if point[2] <= self.layer_height:
+                    if curr_point[2] <= self.layer_height:
                         if self.relative_coordinates:
                             f.write(
-                                f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                f"G1 F{self.get_first_layer_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
                             )
                         else:
                             f.write(
-                                f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                f"G1 F{self.get_first_layer_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
                             )
                     else:
                         if self.relative_coordinates:
                             f.write(
-                                f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                f"G1 F{self.get_print_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
                             )
                         else:
                             f.write(
-                                f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                f"G1 F{self.get_print_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
                             )
-                    prev_point = point
+                    prev_point = curr_point
 
             # Write footer
             f.write(self.footer)
@@ -226,30 +226,30 @@ M73 L{id} ; update layer progress
                     prev_point = trajectory[0, :] + center
 
                     for point in trajectory[1:]:
-                        point += center
-                        dist = np.linalg.norm(point - prev_point)
+                        curr_point = point + center
+                        dist = np.linalg.norm(curr_point - prev_point)
                         self.total_print_dist += dist
                         self.update_extrusion_length(dist)
 
-                        if point[2] <= self.layer_height:
+                        if curr_point[2] <= self.layer_height:
                             if self.relative_coordinates:
                                 f.write(
-                                    f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                    f"G1 F{self.get_first_layer_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
                                 )
                             else:
                                 f.write(
-                                    f"G1 F{self.get_first_layer_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                    f"G1 F{self.get_first_layer_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
                                 )
                         else:
                             if self.relative_coordinates:
                                 f.write(
-                                    f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
+                                    f"G1 F{self.get_print_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.compute_extrusion_length(dist):.5f}\n"
                                 )
                             else:
                                 f.write(
-                                    f"G1 F{self.get_print_feedrate()} X{point[0]:.3f} Y{point[1]:.3f} Z{point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
+                                    f"G1 F{self.get_print_feedrate()} X{curr_point[0]:.3f} Y{curr_point[1]:.3f} Z{curr_point[2]:.4f} E{self.total_extrusion_length:.5f}\n"
                                 )
-                        prev_point = point
+                        prev_point = curr_point
 
 
             # Write footer
