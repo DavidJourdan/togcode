@@ -43,7 +43,7 @@ class Printer:
         self.print_speed = 30
         self.first_layer_speed = 15
         self.flow_multiplier = 1
-        self.bed_temp = 55
+        self.bed_temp = 45
         self.extruder_temp = 190
         self.layer_height = 0.1
         self.origin_is_bed_center = False
@@ -102,7 +102,7 @@ class Printer:
         self.total_extrusion_length = 0
         self.total_print_dist = 0
         self.total_travel_dist = 0
-        self.load_gcode_templates(self.printer_profile)        
+        self.load_gcode_templates(self.printer_profile)
 
         # find bounding box coordinates
         if variable_layer_height:

@@ -28,7 +28,7 @@ M221 S100 ;Reset Flowrate
 M73.2   R1.0 ;Reset left time magnitude
 M1002 set_gcode_claim_speed_level : 5
 M221 X0 Y0 Z0 ; turn off soft endstop to prevent potential logic problem
-G29.1 Z0 ; Set z-offset (Smooth PEI = 0, textured PEI = -0.04)
+G29.1 Z-0.02 ; Set z-offset (Smooth PEI = 0, textured PEI = -0.04)
 M204 S10000 ; init ACC set to 10m/s^2
 
 ;===== heatbed preheat ====================
