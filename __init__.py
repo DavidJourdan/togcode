@@ -77,23 +77,23 @@ class Printer:
 
     def get_print_feedrate(self) -> int:
         # mm/s to mm/min
-        return int(self.print_speed * 60)
+        return round(self.print_speed * 60)
 
     def get_first_layer_feedrate(self) -> int:
         # mm/s to mm/min
-        return int(self.first_layer_speed * 60)
+        return round(self.first_layer_speed * 60)
 
     def get_travel_feedrate(self) -> int:
         # mm/s to mm/min
-        return int(self.travel_speed * 60)
+        return round(self.travel_speed * 60)
 
     def get_retract_feedrate(self) -> int:
         # mm/s to mm/min
-        return int(self.retract_speed * 60)
+        return round(self.retract_speed * 60)
 
     def get_z_lift_feedrate(self) -> int:
         # mm/s to mm/min
-        return int(self.retract_speed * 60)
+        return round(self.retract_speed * 60)
 
     def update_extrusion_length(self, local_length: float):
         self.total_extrusion_length += self.compute_extrusion_length(local_length)
@@ -335,8 +335,8 @@ M73 L{id} ; update layer progress
             self.footer = f.read()
 
         # Put user defined parameters in the header
-        self.header = self.header.replace("<HBPTEMP>", str(int(self.bed_temp)))
-        self.header = self.header.replace("<TOOLTEMP>", str(int(self.extruder_temp)))
+        self.header = self.header.replace("<HBPTEMP>", str(round(self.bed_temp)))
+        self.header = self.header.replace("<TOOLTEMP>", str(round(self.extruder_temp)))
         # G29 ; auto bed levelling\nG0 F6200 X0 Y0 ; back to the origin to begin the purge
         self.header = self.header.replace("<BEDLVL>", "G0 F6200 X0 Y0")
         self.header = self.header.replace("<NOZZLE_DIAMETER>", str(self.nozzle_width))
