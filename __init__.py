@@ -260,7 +260,23 @@ M73 L{id} ; update layer progress
 
         travel_str = ""
         if dist < self.travel_max_length_without_retract:
+            # Retract
+            travel_str += ";retract\n"
+            self.total_extrusion_length -= self.filament_priming
+            if self.relative_coordinates:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{-self.filament_priming:.2f}\n"
+            else:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
+
             travel_str += f"G0 F{self.get_travel_feedrate()} X{point_end[0]:.3f} Y{point_end[1]:.3f} Z{point_end[2]:.4f} ;travel\n"
+
+            # Prime
+            travel_str += ";prime\n"
+            self.total_extrusion_length += self.filament_priming
+            if self.relative_coordinates:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.filament_priming:.2f}\n"
+            else:
+                travel_str += f"G1 F{self.get_retract_feedrate()} E{self.total_extrusion_length:.5f}\n"
         else:
             point_z_lifted = max(point_end[2], point_start[2]) + self.z_lift
 
